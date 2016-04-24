@@ -20,9 +20,14 @@ export const createRoutes = (store) => ({
 
     getChildRoutes (location, cb) {
       require.ensure([], (require) => {
+<<<<<<< bab3f0d783601428cc37a3ed389308d42cc3cb39
         cb(null, [
           // Remove imports!
           require('./Counter').default(store)
+=======
+        next(null, [
+          // Provide store for async reducers and middleware
+>>>>>>> chore(demo): remove demo code for clean project
         ])
       })
     }
