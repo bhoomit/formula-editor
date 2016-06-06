@@ -1,0 +1,18 @@
+.FormulaEditor {
+	background-color: white;
+  width: 100%;
+  input {
+    border: 0;
+    outline: 0;
+    height: 34px;
+    color: black;
+    background-color: transparent!important;
+  }
+  list-group{
+		&:first-child{
+			text-align: left;
+	    	padding: 5px;
+		}
+	}    
+}
+

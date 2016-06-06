@@ -59,3 +59,5 @@ if (__DEBUG__) {
 }
 
 render()
+
+require('react-data-grid/themes/react-data-grid.css')

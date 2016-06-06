@@ -20,4 +20,14 @@
   *:after {
     box-sizing: inherit;
   }
+
+  .fleft {
+    float: left;
+  }
+  
+  .react-grid-Cell {
+    &.editing {
+      z-index: 1000;
+    }
+  }
 }
