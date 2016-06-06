@@ -13,7 +13,6 @@ export const setSelectionRange = (input, selectionStart, selectionEnd) => {
   }
 }
 
-
 export const setCaretToPos = (input, pos) => {
   setSelectionRange(input, pos, pos)
 }

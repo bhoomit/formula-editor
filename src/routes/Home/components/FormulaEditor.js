@@ -55,39 +55,46 @@ class FormulaEditor extends React.Component {
   }
 
   componentDidUpdate(prevProps, prevState) {
+    // console.log(this.props.currentValue)
     this.refs.masterInput.value = this.props.currentValue
   }
 
   render () {
+    // console.log(this.props.currentFormula)
     return (
       <div className={classes.FormulaEditor}>
         <input 
           disabled
           type="text"
-          style={{position: 'absolute', zIndex:0,  left: 0, top: 0, WebkitTextFillColor: 'silver', backgroundColor: 'transparent'}}
+          className={classes.placeholderInput}
           value={this.props.placeHolderText}/>
         <input style={{opacity: 0}}/> 
         <input 
           ref='masterInput'
           type="text" 
-          className='editor-main'
-          autoFocus
+          className={classnames('editor-main', classes.mainInput)}
           onKeyUp={this.handleTextChange} 
           onKeyDown={this.handleKeyDown}  
           onChange={this.handleChange}        
           value={this.state.textValue}
-          style={{position: 'absolute', zIndex: 10, left: 0, top: 0}}/>
+          autoFocus/>
         { (this.props.searchResults.length > 0 || this.props.currentFormula) && 
           <ListGroup >
             { this.props.currentFormula && 
-              <ListGroupItem key="formula" disabled>
-                <b style={{color: '#306E12'}}>{this.props.currentFormula.display_data.highlighted}</b>
+              <ListGroupItem disabled className={classes.currentFormulaHighlighter}>
+                <b>{this.props.currentFormula.display_data.highlighted}</b>
                 <span> {this.props.currentFormula.display_data.nonHighlighted}</span>
               </ListGroupItem>
             }
 
             { this.props.searchResults.map((formula, index) => 
-              <ListGroupItem ref={"list_item_" + index} key={index} header={formula.title} onClick={this.handleResultSelection}>{formula.format}</ListGroupItem>
+                <ListGroupItem 
+                  ref={"list_item_" + index} 
+                  key={index} 
+                  header={formula.title} 
+                  onClick={this.handleResultSelection}>
+                    {formula.format}
+                </ListGroupItem>
             )}
           </ListGroup>
         }

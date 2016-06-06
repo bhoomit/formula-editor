@@ -31,9 +31,15 @@ const BloodHoundDefaults = {
 // Utils
 
 const _getFormulaDisplayData = (state) => {
+  
   return {
     highlighted: _.slice(state.valueArr, 0, state.currentPartIndex + 2).join(' '),
-    nonHighlighted: _.slice(state.formulaParts, state.currentPartIndex).join(' ')
+    nonHighlighted: _.slice(state.formulaParts, state.currentPartIndex).join(' '),
+    // "highlightFields" can be used when we want to highlight colums while formula is being built
+    highlightFields: _.reduce(state.valueArr, function(result, value) {
+      _.startsWith(value, '@') && result.push(_.trimStart(value, '@'))
+      return result
+    }, [])
   }
 }
 
@@ -46,6 +52,7 @@ const _getBloodhound = (key, prevKey) => {
 }
 
 const _invokeBloodhound = (query, state, dispatch) => {
+  if(state.currentPartIndex >= state.formulaParts.length) return
   let parts = state.formulaParts[state.currentPartIndex].match(/\{([^}]+)\}/)
   let key = parts && parts[1] || undefined
   if (key) {
@@ -79,23 +86,23 @@ const AC_textChanged = (currentValue, key, state, dispatch) => {
     case "Backspace":
       let valueArray = _.slice(state.valueArr, 0, partIndex)
       if (currentValue.length <= valueArray.join('').length) {
+        debugger
         partIndex = _.last(state.prevPartIndex)
-        valueArray = _.slice(state.valueArr, 0, partIndex + 1)
+        valueArray = _.slice(state.valueArr, 0, partIndex)
         partialState = {
           ...partialState,
           currentPartIndex: partIndex,
           prevPartIndex: _.slice(state.prevPartIndex, 0, state.prevPartIndex.length-1),
-          valueArr: valueArray,
-          currentValue: _.join(valueArray, '')          
+          valueArr: valueArray
         }
-        query = _.trim(trimStart(partialState.currentValue, _.slice(state.valueArr, 0, partIndex).join('')))
+        query = _.trim(trimStart(partialState.currentValue, _.slice(state.valueArr, 0, partIndex).join(''))) || null
       }
       break
     default:
       break
   }
   dispatch({type: STATE_UPDATED, payload: { newState: partialState }})
-  return dispatch(search_called(query))
+  return query != null &&  dispatch(search_called(query)) || null
 }
 
 const AC_ResultSelected = (key, state, dispatch) => {  
@@ -132,8 +139,7 @@ const AC_ResultSelected = (key, state, dispatch) => {
     ...partialState.currentFormula,
     display_data: _getFormulaDisplayData(partialState)
   }
-  dispatch({type: STATE_UPDATED, payload: { newState: partialState }})  
-  if(state.currentPartIndex >= state.formulaParts.length-1) return
+  dispatch({type: STATE_UPDATED, payload: { newState: partialState }})
   return dispatch(search_called(''))
 }
 
