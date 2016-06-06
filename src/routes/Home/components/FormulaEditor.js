@@ -25,7 +25,7 @@ class FormulaEditor extends React.Component {
 
   componentDidMount() {
     this.props.initFormula(this.props.columnDef)  
-    this.setState({textValue: this.props.currentValue})
+    this.setState({textValue: this.props.currentValue || ''})
   }
 
   getValue() {

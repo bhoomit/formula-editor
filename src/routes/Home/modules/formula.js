@@ -82,8 +82,11 @@ const AC_textChanged = (currentValue, key, state, dispatch) => {
   let partIndex = state.currentPartIndex
   let partialState = { ...state, currentValue }
   let query = _.trim(trimStart(currentValue, _.slice(state.valueArr, 0, partIndex).join('')), ',')
+  key = _.indexOf(Delimiters,_.last(query)) != -1?'Delimiter':key
   switch(key){
-    case "Backspace":
+    case 'Delimiter': 
+      return dispatch(resultSelected(query))      
+    case 'Backspace':
       let valueArray = _.slice(state.valueArr, 0, partIndex)
       if (currentValue.length <= valueArray.join('').length) {
         partIndex = _.last(state.prevPartIndex)
@@ -96,12 +99,11 @@ const AC_textChanged = (currentValue, key, state, dispatch) => {
         }
         query = _.trim(trimStart(partialState.currentValue, _.slice(state.valueArr, 0, partIndex).join(''))) || null
       }
-      break
     default:
-      break
+      dispatch({type: STATE_UPDATED, payload: { newState: partialState }})
+      return query != null &&  dispatch(search_called(query)) || null
   }
-  dispatch({type: STATE_UPDATED, payload: { newState: partialState }})
-  return query != null &&  dispatch(search_called(query)) || null
+  
 }
 
 const AC_ResultSelected = (key, state, dispatch) => {  
@@ -218,7 +220,6 @@ export const actions = {
 
 const FORMULA_ACTION_HANDLERS = {
   [INIT_FORMULA]: (state: FormulaStateObject, action: {payload: object}): FormulaStateObject => {
-    debugger
     AC_InitSuggestors(action.payload.fields) 
     return ({ ...state})
   },
