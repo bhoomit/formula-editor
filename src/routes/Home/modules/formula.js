@@ -83,8 +83,10 @@ const AC_textChanged = (currentValue, key, state, dispatch) => {
   let partialState = { ...state, currentValue }
   let query = _.trim(trimStart(currentValue, _.slice(state.valueArr, 0, partIndex).join('')), ',')
   key = _.indexOf(Delimiters,_.last(query)) != -1?'Delimiter':key
+  // key = _.indexOf(state.searchResults, query) != -1?'Result':key 
   switch(key){
     case 'Delimiter': 
+    case 'Result':
       return dispatch(resultSelected(query))      
     case 'Backspace':
       let valueArray = _.slice(state.valueArr, 0, partIndex)
