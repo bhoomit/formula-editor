@@ -6,18 +6,14 @@ import _ from 'lodash'
 let SUGGESTORS = {}
 
 const Formulas = {
-  count: 'count({predicate})', 
-  max: 'max({predicate}, {field})',
-  min: 'min({predicate}, {field})', 
-  sum: 'sum({predicate}, {field})',
-  avg: 'avg({predicate}, {field})', 
-  daysAgo: 'daysAgo({number})'
+  count: { format: 'count({predicate})', types: ['NUMBER', 'DATE', 'STRING'] }, 
+  max: { format: 'max({predicate}, {field})', types: ['NUMBER', 'DATE'] },
+  min: { format: 'min({predicate}, {field})', types: ['NUMBER', 'DATE'] },
+  sum: { format: 'sum({predicate}, {field})', types: ['NUMBER'] },
+  avg: { format: 'avg({predicate}, {field})', types: ['NUMBER'] },
+  daysAgo: { format: 'daysAgo({field})', types: ['NUMBER', 'DATE'] },
+  trim: { format: 'trim({field})', types: ['STRING'] }
 }
-
-const TypesToFormulaMap = {
-  'NUMBER': ['count', 'max', 'min', 'sum', 'avg'],
-  'DATE': ['daysAgo']
-} 
 
 const Comparators = ['>', '<', '>=', '<=', '==', 'NOT']
 
@@ -41,6 +37,18 @@ const _getFormulaDisplayData = (state) => {
       return result
     }, [])
   }
+}
+
+const _initBloodhoundForFormula = (formula_key, fields) => {
+  let fieldsInContext = []
+  for (let type of Formulas[formula_key].types){
+      _.reduce(fields, (result, value) => {
+        value.type == type && result.push(value)
+        return result
+      }, fieldsInContext) 
+  }
+  console.log(fieldsInContext)
+  AC_InitSuggestors(fieldsInContext)
 }
 
 const _getBloodhound = (key, prevKey) => {
@@ -115,8 +123,9 @@ const AC_ResultSelected = (key, state, dispatch) => {
     key
   ]
   if (state.currentPartIndex == 1){
+    //This means formula has been selcted
     let formula = key
-    let format = Formulas[formula].match(/{(.*?)}/g)    
+    let format = Formulas[formula].format.match(/{(.*?)}/g)    
     partialState.formula = formula
     partialState.formulaParts = [
       ..._.slice(state.formulaParts, 0, state.currentPartIndex + 1), 
@@ -128,6 +137,8 @@ const AC_ResultSelected = (key, state, dispatch) => {
       title: formula,
       formula: partialState.formulaParts.join('')
     }
+    //sets context
+    _initBloodhoundForFormula(formula, state.fields)
   }   
   partialState = {
     ...partialState,
@@ -148,7 +159,7 @@ const AC_ResultSelected = (key, state, dispatch) => {
 
 const AC_ResultReceived = (results, state) => {
   let searchResults = _.reduce(results, function(result, value) {
-    result.push({title: value, format: Formulas[value]})
+    result.push({title: value, format: _.startsWith(value, '@')?'':Formulas[value].format})
     return result
   }, [])
   let placeHolderText = results[0]?(_.slice(state.valueArr, 0, state.currentPartIndex).join('') + results[0]):undefined
@@ -223,7 +234,7 @@ export const actions = {
 const FORMULA_ACTION_HANDLERS = {
   [INIT_FORMULA]: (state: FormulaStateObject, action: {payload: object}): FormulaStateObject => {
     AC_InitSuggestors(action.payload.fields) 
-    return ({ ...state})
+    return ({ ...state, fields: action.payload.fields})
   },
 
   [TEXT_CHANGED]: (state: FormulaStateObject, action: {payload: object}): FormulaStateObject => {

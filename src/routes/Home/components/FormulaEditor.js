@@ -38,12 +38,16 @@ class FormulaEditor extends React.Component {
   } 
 
   handleKeyDown (e) {
+    console.log(e.key)
     if(e.key == 'Tab') {
       e.stopPropagation()
       e.preventDefault()
       let domNode = ReactDOM.findDOMNode(this.refs.list_item_0)
       domNode && this.props.resultSelected(domNode.firstChild.textContent)
       this.refs.masterInput.focus()
+    }else if(e.key=='ArrowUp' || e.key=='ArrowDown'){
+      e.stopPropagation()
+      e.preventDefault()
     }
   }
 
@@ -85,7 +89,7 @@ class FormulaEditor extends React.Component {
           value={this.state.textValue}
           autoFocus/>
         { (this.props.searchResults.length > 0 || this.props.currentFormula) && 
-          <ListGroup >
+          <ListGroup ref="resultList">
             { this.props.currentFormula && 
               <ListGroupItem disabled className={classes.currentFormulaHighlighter}>
                 <b>{this.props.currentFormula.display_data.highlighted}</b>

@@ -20,6 +20,12 @@ let c = [
     type: 'NUMBER',
   },
   {
+    key: 'comment',
+    name: 'Comment',
+    editable: false,
+    type: 'STRING'
+  },
+  {
     key: 'created_at',
     name: 'Created At',
     editable : false,
@@ -39,6 +45,8 @@ const randomDate = (start, end) => {
   return new Date(start.getTime() + Math.random() * (end.getTime() - start.getTime())).toLocaleDateString();
 }
 
+const randomWords = ["Lorel", "Ipsum", "Neque", "porro", "quisquam", "est", "qui", "dolorem", "ipsum", "quia", "dolor", "sit", "amet", ",", ";", "consectetur"]
+
 export const createRows = (numberOfRows) => {
   var _rows = [];
   for (var i = 1; i < numberOfRows; i++) {
@@ -47,6 +55,7 @@ export const createRows = (numberOfRows) => {
       created_at: randomDate(new Date(2015, 3, 1), new Date()),
       revenue: Math.floor((Math.random() * 1000000) + 1),
       quantity: Math.floor((Math.random() * 100) + 1),
+      comment: _.capitalize(_.sampleSize(randomWords, _.random(1,10)).join(' ')),
       formulas: ''
     });
   }
