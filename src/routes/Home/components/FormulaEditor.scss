@@ -8,11 +8,24 @@
     color: black;
     background-color: transparent!important;
   }
-  list-group{
-		&:first-child{
-			text-align: left;
-	    	padding: 5px;
-		}
-	}    
+  .placeholderInput, .mainInput {
+  	position: absolute;
+  	left: 0; 
+  	top: 0;
+  }
+  .placeholderInput {
+  	-webkit-text-fill-color : silver;
+  	z-index: 0; 
+  }
+  .mainInput {
+  	z-index: 10;
+  }
+  .currentFormulaHighlighter {
+  	b {
+  		color: #306E12;
+  	}
+  	text-align: left;
+  	padding: 5px;
+  }
 }
 
