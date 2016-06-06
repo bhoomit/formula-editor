@@ -28,7 +28,12 @@ class FormulaEditor extends React.Component {
   }
 
   getValue() {
-    return this.props.valueArr.join('')
+    return {
+      value: this.props.valueArr.join(''), 
+      highlightFields: this.props.currentFormula 
+        && this.props.currentFormula.display_data.highlightFields
+        || undefined
+    }
   } 
 
   handleKeyDown (e) {

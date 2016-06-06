@@ -86,7 +86,6 @@ const AC_textChanged = (currentValue, key, state, dispatch) => {
     case "Backspace":
       let valueArray = _.slice(state.valueArr, 0, partIndex)
       if (currentValue.length <= valueArray.join('').length) {
-        debugger
         partIndex = _.last(state.prevPartIndex)
         valueArray = _.slice(state.valueArr, 0, partIndex)
         partialState = {

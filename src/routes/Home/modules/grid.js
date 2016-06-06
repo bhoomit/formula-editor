@@ -44,6 +44,13 @@ export const actions = {
   editCell
 }
 
+
+function AC_UpdateCellData(data: object, state: GridStateObject): GridStateObject {
+  let newState = {...state}
+  state.rows[data.rowIdx][data.cellKey] = data.updated.value;
+  return newState;
+}
+
 // ------------------------------------
 // Action Handlers
 // ------------------------------------
@@ -51,7 +58,11 @@ export const actions = {
 const GRID_ACTION_HANDLERS = {
   [INIT_GRID]: (state: GridStateObject, action: {payload: object}): GridStateObject => {
     return ({ ...state, columns, rows: createRows(action.payload.rows) })
-  }
+  },
+
+  [CELL_CHANGED]: (state: GridStateObject, action: {payload: object}): GridStateObject => {
+    return ({ ...state, ...AC_UpdateCellData(action.payload, state) })
+  },
 }
 
 // ------------------------------------
