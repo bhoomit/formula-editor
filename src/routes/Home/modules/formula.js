@@ -218,6 +218,7 @@ export const actions = {
 
 const FORMULA_ACTION_HANDLERS = {
   [INIT_FORMULA]: (state: FormulaStateObject, action: {payload: object}): FormulaStateObject => {
+    debugger
     AC_InitSuggestors(action.payload.fields) 
     return ({ ...state})
   },
