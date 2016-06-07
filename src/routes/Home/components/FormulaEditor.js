@@ -4,7 +4,6 @@ import classnames from 'classnames'
 import { ListGroup, ListGroupItem } from 'react-bootstrap'
 import classes from './FormulaEditor.scss'
 
-
 class FormulaEditor extends React.Component {
   
   constructor (props) {
@@ -24,7 +23,7 @@ class FormulaEditor extends React.Component {
   }
 
   componentDidMount() {
-    this.props.initFormula(this.props.columnDef)  
+    this.props.initFormulaSuggester(this.props.columnDef)  
     this.setState({textValue: this.props.currentValue || ''})
   }
 
@@ -38,7 +37,6 @@ class FormulaEditor extends React.Component {
   } 
 
   handleKeyDown (e) {
-    console.log(e.key)
     if(e.key == 'Tab') {
       e.stopPropagation()
       e.preventDefault()

@@ -1,13 +1,13 @@
 /* @flow */
 import { connect } from 'react-redux'
-import { initFormula, textChanged, resultSelected } from '../modules/formula'
+import { actions } from '../modules/formula/reducer'
 
 import FormulaEditor from '../components/FormulaEditor'
 
 const mapActionCreators: {initFormula: Function, textChanged: Function, resultSelected: Function} = {
-  initFormula,
-  textChanged,
-  resultSelected
+  initFormulaSuggester: actions.initFormula,
+  textChanged: actions.textChanged,
+  resultSelected: actions.resultSelected
 }
 
 const mapStateToProps = (state) => ({

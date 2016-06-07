@@ -1,96 +1,23 @@
-import Bloodhound from 'bloodhound-js'
-import React from 'react'
-import { trimStart } from 'components/Utils'
 import _ from 'lodash'
+import { trimStart } from 'components/Utils'
+import { BloodhoundFactory, FormulaUtils, Formulas } from './data'
 
-let SUGGESTORS = {}
 
-const Formulas = {
-  count: { format: 'count({predicate})', types: ['NUMBER', 'DATE', 'STRING'] }, 
-  max: { format: 'max({predicate}, {field})', types: ['NUMBER', 'DATE'] },
-  min: { format: 'min({predicate}, {field})', types: ['NUMBER', 'DATE'] },
-  sum: { format: 'sum({predicate}, {field})', types: ['NUMBER'] },
-  avg: { format: 'avg({predicate}, {field})', types: ['NUMBER'] },
-  daysAgo: { format: 'daysAgo({field})', types: ['NUMBER', 'DATE'] },
-  trim: { format: 'trim({field})', types: ['STRING'] }
-}
-
-const Comparators = ['>', '<', '>=', '<=', '==', 'NOT']
-
-const Delimiters = [' ', '(', ')', ','] 
-
-const BloodHoundDefaults = {
-  queryTokenizer: Bloodhound.tokenizers.whitespace,
-  datumTokenizer: Bloodhound.tokenizers.whitespace
-}
-
-// Utils
-
-const _getFormulaDisplayData = (state) => {
-  
-  return {
-    highlighted: _.slice(state.valueArr, 0, state.currentPartIndex + 2).join(' '),
-    nonHighlighted: _.slice(state.formulaParts, state.currentPartIndex).join(' '),
-    // "highlightFields" can be used when we want to highlight colums while formula is being built
-    highlightFields: _.reduce(state.valueArr, function(result, value) {
-      _.startsWith(value, '@') && result.push(_.trimStart(value, '@'))
-      return result
-    }, [])
-  }
-}
-
-const _initBloodhoundForFormula = (formula_key, fields) => {
-  let fieldsInContext = []
-  for (let type of Formulas[formula_key].types){
-      _.reduce(fields, (result, value) => {
-        value.type == type && result.push(value)
-        return result
-      }, fieldsInContext) 
-  }
-  console.log(fieldsInContext)
-  AC_InitSuggestors(fieldsInContext)
-}
-
-const _getBloodhound = (key, prevKey) => {
-  //Here I should configure when formula inside formula and context is implemented
-  // let comparator = (key== 'field' )?'comparator'
-  //   : key == 'predicate'? 'field'
-  //   : key
-  return SUGGESTORS[key]
-}
-
-const _invokeBloodhound = (query, state, dispatch) => {
+const invokeTypeahead  = (query, state, dispatch) => {
   if(state.currentPartIndex >= state.formulaParts.length) return
-  let parts = state.formulaParts[state.currentPartIndex].match(/\{([^}]+)\}/)
-  let key = parts && parts[1] || undefined
+  let parts = state.formulaParts[state.currentPartIndex].match(/\{([^}]+)\}/) || []
+  let key = parts[1] || _.noop()
   if (key) {
-    return _getBloodhound(
-      key,
-      state.valueArr[_.last(state.prevPartIndex)]
-    ).search(query, (results) => dispatch(result_received(results)))
+    return BloodhoundFactory.get(key).search(query, (results) => dispatch(result_received(results)))
   } 
   return dispatch(resultSelected(state.formulaParts[state.currentPartIndex]))
-}
-
-// Utils over
-
-const AC_InitSuggestors = (fields) => {
-  let fields_arr = _.map(fields, (value)=>('@' + value.key))
-  SUGGESTORS = { ...SUGGESTORS, ...{
-      field: new Bloodhound({local: fields_arr, ...BloodHoundDefaults}),
-      formula: new Bloodhound({local: _.keys(Formulas) , ...BloodHoundDefaults}),
-      comparator: new Bloodhound({local: Comparators, ...BloodHoundDefaults}),
-      //for formula inside formula purpose
-      formulaAndField: new Bloodhound({local: [..._.keys(Formulas), ...fields_arr] , ...BloodHoundDefaults})
-    }
-  }
 }
 
 const AC_textChanged = (currentValue, key, state, dispatch) => {
   let partIndex = state.currentPartIndex
   let partialState = { ...state, currentValue }
   let query = _.trim(trimStart(currentValue, _.slice(state.valueArr, 0, partIndex).join('')), ',')
-  key = _.indexOf(Delimiters,_.last(query)) != -1?'Delimiter':key
+  key = FormulaUtils.endsWithDelimiters(query)?'Delimiter':key
   // key = _.indexOf(state.searchResults, query) != -1?'Result':key 
   switch(key){
     case 'Delimiter': 
@@ -100,12 +27,11 @@ const AC_textChanged = (currentValue, key, state, dispatch) => {
       let valueArray = _.slice(state.valueArr, 0, partIndex)
       if (currentValue.length <= valueArray.join('').length) {
         partIndex = _.last(state.prevPartIndex)
-        valueArray = _.slice(state.valueArr, 0, partIndex)
         partialState = {
           ...partialState,
           currentPartIndex: partIndex,
           prevPartIndex: _.slice(state.prevPartIndex, 0, state.prevPartIndex.length-1),
-          valueArr: valueArray
+          valueArr: _.slice(state.valueArr, 0, partIndex)
         }
         query = _.trim(trimStart(partialState.currentValue, _.slice(state.valueArr, 0, partIndex).join(''))) || null
       }
@@ -122,36 +48,29 @@ const AC_ResultSelected = (key, state, dispatch) => {
     ..._.slice(state.valueArr, 0, state.currentPartIndex),
     key
   ]
+  let currentValue = valueArr.join('')
   if (state.currentPartIndex == 1){
     //This means formula has been selcted
-    let formula = key
-    let format = Formulas[formula].format.match(/{(.*?)}/g)    
-    partialState.formula = formula
-    partialState.formulaParts = [
-      ..._.slice(state.formulaParts, 0, state.currentPartIndex + 1), 
-      ...['(', '{field}', '{comparator}', '{field}'], 
-      ...format.length==2?[',', '{field}']:[],
-      ')'
-    ]
+    partialState.formulaParts = FormulaUtils.getFormulaParts(key)
     partialState.currentFormula = {
-      title: formula,
+      title: key,
       formula: partialState.formulaParts.join('')
     }
     //sets context
-    _initBloodhoundForFormula(formula, state.fields)
+    FormulaUtils.initTypeaheadForFormula(key, state.fields)
   }   
   partialState = {
     ...partialState,
     valueArr,
+    currentValue,
+    placeHolderText: currentValue,
+    searchResults: [],
     currentPartIndex: state.currentPartIndex + 1,
     prevPartIndex: [...state.prevPartIndex, state.currentPartIndex],
-    searchResults: [],
-    currentValue: valueArr.join(''),
-    placeHolderText: valueArr.join(''),
   }
   partialState.currentFormula = { 
     ...partialState.currentFormula,
-    display_data: _getFormulaDisplayData(partialState)
+    display_data: FormulaUtils.getFormulaDisplayData(partialState)
   }
   dispatch({type: STATE_UPDATED, payload: { newState: partialState }})
   return dispatch(search_called(''))
@@ -159,10 +78,10 @@ const AC_ResultSelected = (key, state, dispatch) => {
 
 const AC_ResultReceived = (results, state) => {
   let searchResults = _.reduce(results, function(result, value) {
-    result.push({title: value, format: _.startsWith(value, '@')?'':Formulas[value].format})
+    result.push({title: value, format: _.isUndefined(Formulas[value])?'':Formulas[value].format})
     return result
   }, [])
-  let placeHolderText = results[0]?(_.slice(state.valueArr, 0, state.currentPartIndex).join('') + results[0]):undefined
+  let placeHolderText = results[0]?(_.slice(state.valueArr, 0, state.currentPartIndex).join('') + results[0]):_.noop()
   return {...state, searchResults, placeHolderText}
 }
 
@@ -171,19 +90,19 @@ const AC_ResultReceived = (results, state) => {
 // ------------------------------------
 // Constants
 // ------------------------------------
-export const INIT_FORMULA = 'INIT_FORMULA'
-export const TEXT_CHANGED = 'TEXT_CHANGED'
-export const RESULT_SELECTED = 'RESULT_SELECTED'
+const INIT_FORMULA = 'INIT_FORMULA'
+const TEXT_CHANGED = 'TEXT_CHANGED'
+const RESULT_SELECTED = 'RESULT_SELECTED'
 const RESULT_RECEIVED = 'RESULT_RECEIVED'
 const STATE_UPDATED = 'STATE_UPDATED'
+
 
 // ------------------------------------
 // Actions
 // ------------------------------------
 
-//Exposed actions
 
-export function initFormula (fields: array): Action {
+function initFormula (fields: array): Action {
   return {
     type: INIT_FORMULA,
     payload: {
@@ -192,13 +111,13 @@ export function initFormula (fields: array): Action {
   }
 }
 
-export function textChanged (value: text, keyPressed: string): Action {
+function textChanged (value: text, keyPressed: string): Action {
   return function(dispatch, getState) {
     return AC_textChanged(value, keyPressed, getState().formula, dispatch)
   }
 }
 
-export function resultSelected (key: text): Action {
+function resultSelected (key: text): Action {
   return function(dispatch, getState) {
     return AC_ResultSelected(key, getState().formula, dispatch)
   }
@@ -208,7 +127,7 @@ export function resultSelected (key: text): Action {
 
 function search_called (query: text) {
   return (dispatch, getState) => {
-    return _invokeBloodhound(query, getState().formula, dispatch)
+    return invokeTypeahead(query, getState().formula, dispatch)
   }
 }
 
@@ -221,6 +140,7 @@ function result_received (results: array): Action {
   }
 }
 
+
 export const actions = {
   initFormula,
   textChanged,
@@ -232,8 +152,8 @@ export const actions = {
 // ------------------------------------
 
 const FORMULA_ACTION_HANDLERS = {
+
   [INIT_FORMULA]: (state: FormulaStateObject, action: {payload: object}): FormulaStateObject => {
-    AC_InitSuggestors(action.payload.fields) 
     return ({ ...state, fields: action.payload.fields})
   },
 
@@ -260,11 +180,11 @@ const initialState: FormulaStateObject = {
   currentFormula: null,
   searchResults: [],
   currentValue: null,
+  valueArr: ['='],
   //for internal use
   formulaParts: ['=', '{formula}'],
   currentPartIndex: 1,
   prevPartIndex:[0],
-  valueArr: ['=']
 }
 
 export default function formulaReducer (state: FormulaStateObject = initialState, action: Action): FormulaStateObject {

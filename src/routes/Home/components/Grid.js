@@ -9,6 +9,7 @@ class Grid extends React.Component {
     super(props)
     this.handleRowUpdated = this.handleRowUpdated.bind(this)
     this.rowGetter = this.rowGetter.bind(this)
+    this.handleCellSelect = this.handleCellSelect.bind(this)
   }
 
   componentDidMount() {
@@ -23,6 +24,10 @@ class Grid extends React.Component {
     return this.props.rows[rowIdx]
   }
 
+  handleCellSelect (e) {
+    // Something to do field highlighting
+  }
+
   render () {
     return (
       <ReactDataGrid
@@ -31,7 +36,8 @@ class Grid extends React.Component {
         rowGetter={this.rowGetter}
         rowsCount={this.props.rows.length}
         minHeight={500}
-        onRowUpdated={this.handleRowUpdated} />
+        onRowUpdated={this.handleRowUpdated}
+        onCellSelected={this.handleCellSelect} />
       )
   }
 }
