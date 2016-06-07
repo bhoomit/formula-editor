@@ -45,7 +45,7 @@ class BloodhoundFactoryClass {
   }
 
   get (key) {
-    debugger
+    // debugger
     return this.bloodhounds[key]
   }
 }
